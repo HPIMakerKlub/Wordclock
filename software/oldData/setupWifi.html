@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="../../favicon.ico">
+
+    <title>Wordclock</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap.min.css" rel="stylesheet">
+
+    <link href="font-awesome.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="extra.css" rel="stylesheet">
+
+    <script src="jquery.min.js"></script>
+
+    <script>
+    var tempData;
+    var selectedWifi;
+    function init() {
+      $('#scan').click(function() {
+        updateWifiList();
+      });
+      $('#networks').on('click', '.list-group-item', function(e) {
+        var target = $(event.target);
+        var id = parseInt(target.attr('data-id'));
+        selectedWifi = tempData.networks[id];
+        $("#networks>ul>li.active").removeClass("active");
+        target.addClass('active');
+
+        var html = "";
+        if (selectedWifi.encryption) {
+          html += '<input id="PSK" type="text" placeholder="Passwort">';
+        }
+        html += '<p><a class="btn btn-custom" id="connect" role="button">Neustarten und verbinden</a></p>';
+        $('#connecting').html(html);
+      });
+      $('#connecting').on('click', '#connect', function(e) {
+        var psk = selectedWifi.encryption ? $('#PSK').val() : '';
+        $.get('./api/config.json', {ssid : selectedWifi.name, psk : psk}, function(data) {
+          alert("Die Wordclock startet nun neu. Die Zugriff erfolgt in dem konfigurierten WLAN unter wordclock.local bzw. der IP Adresse der Wordclock");
+          setTimeout(function() {$.get('./api/reconnect.json');}, 2000);
+        });
+      });
+    }
+    function updateWifiList() {
+      $('#spinner').removeClass();
+      $('#spinner').addClass('fa fa-circle-o-notch fa-spin');
+      $('#connecting').html('');
+
+      $.get("./api/wifi_list.json", function(data) {
+        tempData = data;
+        var html="<ul class=\"list-group\">";
+        $.each(data.networks, function(i, val) {
+          html += "<li class=\"list-group-item\" data-id=\"" + i + "\">" + val.name + "<span class=\"badge\">";
+          if (val.encryption) {
+            html += "<i class=\"fa fa-lock\"></i>";
+          }
+          html += val.strength + "%</span></li>";
+        });
+        html += "</ul>";
+        $('#networks').html(html);
+        $('#spinner').removeClass();
+        $('#spinner').addClass('fa fa-check');
+      }).fail(function() {
+        alert("Konnte die Liste der WLAN Netzwerke nicht laden. Bitte probieren Sie es erneut oder kontakieren Sie fabian@luepke.email");
+      });
+    }
+    </script>
+  </head>
+
+  <body onload="init()">
+    <div class="container">
+      <div class="header clearfix">
+        <img src="logo.svg">
+      </div>
+
+      <div class="jumbotron jumbotron-setup">
+        <p class="lead">WLAN Netzwerk w&auml;hlen</p>
+        <div id="networks"></div>
+        <p><a class="btn btn-custom" id="scan" role="button"><i id="spinner" class="fa fa-check"></i>Scannen</a></p>
+        <div id="connecting">
+        </div>
+      </div>
+      <footer class="footer">
+        <p>Made by Fabian L&uuml;pke (<a href="mailto:fabian@luepke.email">fabian@luepke.email</a>)</p>
+        <p>Check out on Github: <a href="https://github.com/HPIMakerKlub/Wordclock">https://github.com/HPIMakerKlub/Wordclock</a></p>
+      </footer>
+    </div> <!-- /container -->
+  </body>
+</html>
+

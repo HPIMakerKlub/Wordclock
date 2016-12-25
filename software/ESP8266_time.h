@@ -11,6 +11,7 @@
 #include <WiFiUdp.h>
 
 #define NTP_PACKET_SIZE 48
+#define LEAP_YEAR(Y) ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
 
 class ESP8266_Time
 {
@@ -21,6 +22,7 @@ class ESP8266_Time
     int getMinutes();
     int getSeconds();
   private:
+    bool _summertime(int year, byte month, byte day, byte hour, byte tzHours);
     unsigned int _localPort = 2390;  
     // A UDP instance to let us send and receive packets over UDP
     WiFiUDP _udp;
